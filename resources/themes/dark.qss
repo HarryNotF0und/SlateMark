@@ -1,0 +1,160 @@
+* {
+  font-family: "Segoe UI";
+  font-size: 13px;
+}
+QMainWindow, QWidget {
+  background: #0f141b;
+  color: #e8edf4;
+}
+QMenuBar {
+  background: #121820;
+  color: #e8edf4;
+  border-bottom: 1px solid #242c36;
+  min-height: 36px;
+  padding-left: 18px;
+}
+QMenuBar::item {
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+QMenuBar::item:selected {
+  background: #1b2430;
+}
+QMenu {
+  background: #151b23;
+  color: #e8edf4;
+  border: 1px solid #2a3441;
+  padding: 6px;
+}
+QMenu::item {
+  padding: 8px 24px;
+  border-radius: 5px;
+}
+QMenu::item:selected {
+  background: #223146;
+}
+#navigationRail {
+  background: #101721;
+  border-right: 1px solid #242c36;
+}
+#toolPanel {
+  background: #151b23;
+  border-right: 1px solid #242c36;
+}
+#toolPanelScroll, #toolPanelViewport, #toolPanelContent {
+  background: transparent;
+  border: none;
+}
+#toolPanelScroll QScrollBar:vertical {
+  background: transparent;
+  border: none;
+  width: 8px;
+  margin: 2px 0;
+}
+#toolPanelScroll QScrollBar::handle:vertical {
+  background: #2b3542;
+  border-radius: 4px;
+  min-height: 36px;
+}
+#toolPanelScroll QScrollBar::handle:vertical:hover {
+  background: #38506d;
+}
+#toolPanelScroll QScrollBar::add-line:vertical,
+#toolPanelScroll QScrollBar::sub-line:vertical {
+  background: transparent;
+  border: none;
+  height: 0;
+}
+#toolPanelScroll QScrollBar::add-page:vertical,
+#toolPanelScroll QScrollBar::sub-page:vertical {
+  background: transparent;
+}
+#panelTitle {
+  font-weight: 700;
+  color: #f0f4f8;
+}
+#panelTitle span, #statsLabel {
+  color: #96a0ad;
+  font-size: 12px;
+  line-height: 1.45;
+}
+#sectionLabel {
+  color: #aab3c2;
+  font-size: 11px;
+  font-weight: 700;
+}
+#panelButton, #outlineButton, QPushButton {
+  background: #1a222d;
+  color: #e8edf4;
+  border: 1px solid #2b3542;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 5px 10px;
+}
+#svgIconButton, #panelIconButton, QToolButton {
+  background: #1a222d;
+  color: #e8edf4;
+  border: 1px solid #2b3542;
+  border-radius: 8px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+#svgIconButton:hover, #panelIconButton:hover, #panelButton:hover, #outlineButton:hover, QPushButton:hover {
+  background: #223044;
+  border-color: #38506d;
+}
+#svgIconButton[selected="true"], #panelIconButton[selected="true"] {
+  background: #21466e;
+  border-color: #397cca;
+}
+#viewModeSwitcher {
+  background: #151b23;
+  border: 1px solid #2a3441;
+  border-radius: 9px;
+}
+#documentTabBar::tab {
+  background: #151b23;
+  color: #dce3ec;
+  border: 1px solid #2a3441;
+  border-radius: 8px;
+  min-width: 124px;
+  max-width: 220px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0 36px 0 14px;
+  margin-right: 6px;
+}
+#documentTabBar::tab:selected {
+  background: #1b2430;
+  border-color: #344153;
+}
+#markdownEditor, #previewWidget {
+  background: #111820;
+  color: #eef3f8;
+  border: 1px solid #2a3441;
+  border-radius: 10px;
+  selection-background-color: #275f99;
+}
+QPlainTextEdit {
+  padding: 12px;
+}
+QSplitter::handle {
+  background: #0f141b;
+  width: 8px;
+}
+#statusBarWidget {
+  background: #121820;
+  color: #aab3c2;
+  border-top: 1px solid #242c36;
+}
+QLineEdit, QSpinBox, QComboBox, QPlainTextEdit, QListWidget {
+  background: #111820;
+  color: #e8edf4;
+  border: 1px solid #2a3441;
+  border-radius: 7px;
+  padding: 6px;
+}
+QDialog {
+  background: #151b23;
+}
