@@ -3,8 +3,10 @@
 }
 body {
   margin: 0;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  line-height: 1.65;
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  font-size: 16.5px;
+  line-height: 1.74;
+  text-rendering: optimizeLegibility;
 }
 body.dark {
   background: #111820;
@@ -14,25 +16,83 @@ body.light {
   background: #ffffff;
   color: #172033;
 }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c4cfdd transparent;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4cfdd;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9fb0c4;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  background: transparent;
+  display: none;
+}
+body.dark * {
+  scrollbar-color: #3b4654 transparent;
+}
+body.dark::-webkit-scrollbar-thumb,
+body.dark ::-webkit-scrollbar-thumb {
+  background: #3b4654;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+body.dark::-webkit-scrollbar-thumb:hover,
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: #506176;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
 .markdown-body {
   max-width: 900px;
   margin: 0 auto;
   padding: 58px 64px;
 }
+p {
+  margin: .85em 0 1.05em;
+}
 h1, h2, h3, h4, h5, h6 {
-  margin: 1.15em 0 .55em;
-  line-height: 1.2;
+  font-family: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  font-weight: 650;
+  margin: 1.25em 0 .6em;
+  line-height: 1.24;
 }
 h1 {
-  font-size: 2.4rem;
+  font-size: 2.28rem;
   padding-bottom: .45em;
   border-bottom: 1px solid rgba(150, 160, 173, .28);
 }
 h2 {
-  font-size: 1.7rem;
+  font-size: 1.62rem;
   color: #5aa7ff;
   padding-bottom: .35em;
   border-bottom: 1px solid rgba(150, 160, 173, .22);
+}
+h3 {
+  font-size: 1.28rem;
+}
+ul, ol {
+  padding-left: 1.45em;
+}
+li {
+  margin: .32em 0;
 }
 a {
   color: #6db4ff;
@@ -44,7 +104,8 @@ blockquote {
   color: #c9d2df;
 }
 code {
-  font-family: "Cascadia Mono", Consolas, monospace;
+  font-family: "Cascadia Mono", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: .94em;
   background: rgba(90, 167, 255, .12);
   border-radius: 5px;
   padding: .14em .35em;
@@ -53,6 +114,7 @@ pre {
   overflow-x: auto;
   margin: 0;
   padding: 16px;
+  line-height: 1.58;
 }
 .code-block code {
   display: block;
