@@ -54,7 +54,7 @@ PreviewWidget::PreviewWidget(QWidget* parent)
 {
     setObjectName(QStringLiteral("previewWidget"));
     m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setContentsMargins(18, 0, 0, 0);
 
     m_debounce.setSingleShot(true);
     m_debounce.setInterval(180);
@@ -84,7 +84,7 @@ void PreviewWidget::ensureLightweightView()
     m_textView = new QTextBrowser(this);
     m_textView->setOpenExternalLinks(false);
     m_textView->setOpenLinks(false);
-    m_textView->document()->setDocumentMargin(0);
+    m_textView->document()->setDocumentMargin(16);
     m_layout->addWidget(m_textView);
     connect(m_textView, &QTextBrowser::anchorClicked, this, [](const QUrl& url) {
         if (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https") || url.scheme() == QStringLiteral("mailto")) {

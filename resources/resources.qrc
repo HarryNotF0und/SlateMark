@@ -53,6 +53,8 @@
     <file alias="icons/plus.svg">icons/plus.svg</file>
     <file alias="icons/copy.svg">icons/copy.svg</file>
     <file alias="icons/check.svg">icons/check.svg</file>
+    <file alias="icons/chevron-down-dark.svg">icons/chevron-down-dark.svg</file>
+    <file alias="icons/chevron-down-light.svg">icons/chevron-down-light.svg</file>
     <file alias="icons/warning.svg">icons/warning.svg</file>
     <file alias="icons/folder.svg">icons/folder.svg</file>
     <file alias="icons/external-link.svg">icons/external-link.svg</file>

@@ -141,7 +141,7 @@ QPlainTextEdit {
 }
 QSplitter::handle {
   background: #0f141b;
-  width: 8px;
+  width: 16px;
 }
 #statusBarWidget {
   background: #121820;
@@ -191,16 +191,15 @@ QDialog {
 
 #settingsCombo::drop-down {
   border: none;
-  width: 28px;
+  width: 34px;
+  subcontrol-origin: padding;
+  subcontrol-position: center right;
 }
 
 #settingsCombo::down-arrow {
-  image: none;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid #aab3c2;
+  image: url(:/icons/chevron-down-dark.svg);
+  width: 16px;
+  height: 16px;
   margin-right: 10px;
 }
 
