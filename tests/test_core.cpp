@@ -35,6 +35,16 @@ void CoreTests::markdownToHtml()
     QVERIFY(MarkdownService::markdownToHtml(QStringLiteral("```bash\nif [ -f a ]; then echo $HOME; fi\n```")).contains(QStringLiteral("tok-variable\">$HOME")));
     QVERIFY(MarkdownService::markdownToHtml(QStringLiteral("```js\nconst x = true\n```")).contains(QStringLiteral("language-javascript")));
     QVERIFY(MarkdownService::markdownToHtml(QStringLiteral("```js\nconst x = true\n```")).contains(QStringLiteral("tok-keyword\">const")));
+    const QString mathHtml = MarkdownService::markdownToHtml(QStringLiteral("Inline $a^2 + b_1$.\n\n$$\n\\frac{1}{2} + \\sqrt{x} + \\int_0^1 x^2 dx\n$$"));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-inline")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-block")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-frac")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-root")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-op\">∫")));
+    QVERIFY(mathHtml.contains(QStringLiteral("<sup>")));
+    QVERIFY(mathHtml.contains(QStringLiteral("<sub>")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-number\">2")));
+    QVERIFY(mathHtml.contains(QStringLiteral("math-number\">1")));
 }
 
 void CoreTests::fileOpenSave()

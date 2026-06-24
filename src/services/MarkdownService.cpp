@@ -1,10 +1,13 @@
 #include "services/MarkdownService.h"
 
 #include <QFile>
+#include <QHash>
 #include <QRegularExpression>
 #include <QSet>
 #include <QStringConverter>
 #include <QTextStream>
+
+#include <utility>
 
 namespace {
 QString readResource(const QString& path)
@@ -327,6 +330,274 @@ QString highlightCode(const QString& code, const QString& rawLanguage)
     }
     return localEscapeHtml(code);
 }
+
+class MathParser
+{
+public:
+    explicit MathParser(QString source)
+        : m_source(std::move(source))
+    {
+    }
+
+    QString parse()
+    {
+        return parseExpression();
+    }
+
+private:
+    QString parseExpression(QChar stop = QChar())
+    {
+        QString out;
+        while (m_pos < m_source.size()) {
+            if (!stop.isNull() && m_source.at(m_pos) == stop) {
+                ++m_pos;
+                break;
+            }
+            out += parseScriptable();
+        }
+        return out;
+    }
+
+    QString parseScriptable()
+    {
+        QString base = parseAtom();
+        QString subscript;
+        QString superscript;
+
+        while (m_pos < m_source.size()) {
+            skipInlineSpaces();
+            if (m_pos >= m_source.size()) {
+                break;
+            }
+            const QChar ch = m_source.at(m_pos);
+            if (ch != '^' && ch != '_') {
+                break;
+            }
+            ++m_pos;
+            QString value = parseScriptArgument();
+            if (ch == '^') {
+                superscript = value;
+            } else {
+                subscript = value;
+            }
+        }
+
+        if (subscript.isEmpty() && superscript.isEmpty()) {
+            return base;
+        }
+
+        QString script = QStringLiteral("<span class=\"math-scripts\">");
+        if (!superscript.isEmpty()) {
+            script += QStringLiteral("<sup>") + superscript + QStringLiteral("</sup>");
+        }
+        if (!subscript.isEmpty()) {
+            script += QStringLiteral("<sub>") + subscript + QStringLiteral("</sub>");
+        }
+        script += QStringLiteral("</span>");
+        return QStringLiteral("<span class=\"math-scripted\"><span class=\"math-base\">%1</span>%2</span>").arg(base, script);
+    }
+
+    QString parseAtom()
+    {
+        if (m_pos >= m_source.size()) {
+            return {};
+        }
+
+        const QChar ch = m_source.at(m_pos);
+        if (ch == '{') {
+            ++m_pos;
+            return QStringLiteral("<span class=\"math-group\">") + parseExpression('}') + QStringLiteral("</span>");
+        }
+        if (ch == '}') {
+            ++m_pos;
+            return {};
+        }
+        if (ch == '\\') {
+            return parseCommand();
+        }
+        if (ch == '\n' || ch == '\r') {
+            ++m_pos;
+            return QStringLiteral("<br>");
+        }
+        if (ch.isSpace()) {
+            ++m_pos;
+            return QStringLiteral(" ");
+        }
+        if (ch.isLetter()) {
+            ++m_pos;
+            return QStringLiteral("<span class=\"math-ident\">%1</span>").arg(localEscapeHtml(QString(ch)));
+        }
+        if (ch.isDigit()) {
+            int start = m_pos++;
+            while (m_pos < m_source.size() && (m_source.at(m_pos).isDigit() || m_source.at(m_pos) == '.')) {
+                ++m_pos;
+            }
+            return QStringLiteral("<span class=\"math-number\">%1</span>").arg(localEscapeHtml(m_source.mid(start, m_pos - start)));
+        }
+
+        ++m_pos;
+        return localEscapeHtml(QString(ch));
+    }
+
+    QString parseScriptArgument()
+    {
+        skipInlineSpaces();
+        if (m_pos >= m_source.size()) {
+            return {};
+        }
+        if (m_source.at(m_pos) == '{') {
+            ++m_pos;
+            return parseExpression('}');
+        }
+        return parseAtom();
+    }
+
+    QString parseRequiredGroup()
+    {
+        skipInlineSpaces();
+        if (m_pos < m_source.size() && m_source.at(m_pos) == '{') {
+            ++m_pos;
+            return parseExpression('}');
+        }
+        return parseAtom();
+    }
+
+    QString parseOptionalGroup()
+    {
+        skipInlineSpaces();
+        if (m_pos >= m_source.size() || m_source.at(m_pos) != '[') {
+            return {};
+        }
+        ++m_pos;
+        return parseExpression(']');
+    }
+
+    QString parseCommand()
+    {
+        ++m_pos;
+        const int start = m_pos;
+        while (m_pos < m_source.size() && m_source.at(m_pos).isLetter()) {
+            ++m_pos;
+        }
+
+        if (start == m_pos) {
+            if (m_pos >= m_source.size()) {
+                return QStringLiteral("\\");
+            }
+            const QChar escaped = m_source.at(m_pos++);
+            return localEscapeHtml(QString(escaped));
+        }
+
+        const QString command = m_source.mid(start, m_pos - start);
+        if (command == QStringLiteral("frac") || command == QStringLiteral("dfrac") || command == QStringLiteral("tfrac")) {
+            const QString numerator = parseRequiredGroup();
+            const QString denominator = parseRequiredGroup();
+            return QStringLiteral("<span class=\"math-frac\"><span class=\"math-num\">%1</span><span class=\"math-den\">%2</span></span>").arg(numerator, denominator);
+        }
+        if (command == QStringLiteral("sqrt")) {
+            const QString degree = parseOptionalGroup();
+            const QString radicand = parseRequiredGroup();
+            if (degree.isEmpty()) {
+                return QStringLiteral("<span class=\"math-root\"><span class=\"math-radical\">√</span><span class=\"math-radicand\">%1</span></span>").arg(radicand);
+            }
+            return QStringLiteral("<span class=\"math-root\"><sup class=\"math-root-degree\">%1</sup><span class=\"math-radical\">√</span><span class=\"math-radicand\">%2</span></span>").arg(degree, radicand);
+        }
+        if (command == QStringLiteral("left") || command == QStringLiteral("right")) {
+            skipInlineSpaces();
+            return parseAtom();
+        }
+        if (command == QStringLiteral("cdot")) return QStringLiteral("·");
+        if (command == QStringLiteral("times")) return QStringLiteral("×");
+        if (command == QStringLiteral("div")) return QStringLiteral("÷");
+        if (command == QStringLiteral("pm")) return QStringLiteral("±");
+        if (command == QStringLiteral("le") || command == QStringLiteral("leq")) return QStringLiteral("≤");
+        if (command == QStringLiteral("ge") || command == QStringLiteral("geq")) return QStringLiteral("≥");
+        if (command == QStringLiteral("ne") || command == QStringLiteral("neq")) return QStringLiteral("≠");
+        if (command == QStringLiteral("approx")) return QStringLiteral("≈");
+        if (command == QStringLiteral("infty")) return QStringLiteral("∞");
+        if (command == QStringLiteral("partial")) return QStringLiteral("∂");
+        if (command == QStringLiteral("nabla")) return QStringLiteral("∇");
+        if (command == QStringLiteral("int")) return QStringLiteral("<span class=\"math-op\">∫</span>");
+        if (command == QStringLiteral("sum")) return QStringLiteral("<span class=\"math-op\">∑</span>");
+        if (command == QStringLiteral("prod")) return QStringLiteral("<span class=\"math-op\">∏</span>");
+        if (command == QStringLiteral("lim")) return QStringLiteral("<span class=\"math-fn\">lim</span>");
+        if (command == QStringLiteral("sin") || command == QStringLiteral("cos") || command == QStringLiteral("tan")
+            || command == QStringLiteral("log") || command == QStringLiteral("ln") || command == QStringLiteral("exp")) {
+            return QStringLiteral("<span class=\"math-fn\">%1</span>").arg(command);
+        }
+
+        const QString symbol = greekSymbol(command);
+        if (!symbol.isEmpty()) {
+            return symbol;
+        }
+        return QStringLiteral("<span class=\"math-fn\">%1</span>").arg(localEscapeHtml(command));
+    }
+
+    QString greekSymbol(const QString& command) const
+    {
+        static const QHash<QString, QString> symbols = {
+            {QStringLiteral("alpha"), QStringLiteral("α")}, {QStringLiteral("beta"), QStringLiteral("β")},
+            {QStringLiteral("gamma"), QStringLiteral("γ")}, {QStringLiteral("delta"), QStringLiteral("δ")},
+            {QStringLiteral("epsilon"), QStringLiteral("ε")}, {QStringLiteral("theta"), QStringLiteral("θ")},
+            {QStringLiteral("lambda"), QStringLiteral("λ")}, {QStringLiteral("mu"), QStringLiteral("μ")},
+            {QStringLiteral("pi"), QStringLiteral("π")}, {QStringLiteral("rho"), QStringLiteral("ρ")},
+            {QStringLiteral("sigma"), QStringLiteral("σ")}, {QStringLiteral("phi"), QStringLiteral("φ")},
+            {QStringLiteral("omega"), QStringLiteral("ω")}, {QStringLiteral("Gamma"), QStringLiteral("Γ")},
+            {QStringLiteral("Delta"), QStringLiteral("Δ")}, {QStringLiteral("Theta"), QStringLiteral("Θ")},
+            {QStringLiteral("Lambda"), QStringLiteral("Λ")}, {QStringLiteral("Pi"), QStringLiteral("Π")},
+            {QStringLiteral("Sigma"), QStringLiteral("Σ")}, {QStringLiteral("Phi"), QStringLiteral("Φ")},
+            {QStringLiteral("Omega"), QStringLiteral("Ω")}
+        };
+        return symbols.value(command);
+    }
+
+    void skipInlineSpaces()
+    {
+        while (m_pos < m_source.size() && m_source.at(m_pos).isSpace() && m_source.at(m_pos) != '\n' && m_source.at(m_pos) != '\r') {
+            ++m_pos;
+        }
+    }
+
+    QString m_source;
+    int m_pos = 0;
+};
+
+QString renderMath(QString source, bool block)
+{
+    source = source.trimmed();
+    MathParser parser(source);
+    const QString rendered = parser.parse();
+    if (block) {
+        return QStringLiteral("<div class=\"math math-block\">%1</div>").arg(rendered);
+    }
+    return QStringLiteral("<span class=\"math math-inline\">%1</span>").arg(rendered);
+}
+
+QString extractMathTokens(const QString& text, const QRegularExpression& expression, QStringList& tokens)
+{
+    QString out;
+    int last = 0;
+    const auto matches = expression.globalMatch(text);
+    QRegularExpressionMatchIterator it = matches;
+    while (it.hasNext()) {
+        const QRegularExpressionMatch match = it.next();
+        out += text.mid(last, match.capturedStart() - last);
+        const QString token = QStringLiteral("\uE000MATH%1\uE001").arg(tokens.size());
+        tokens << renderMath(match.captured(1), false);
+        out += token;
+        last = match.capturedEnd();
+    }
+    out += text.mid(last);
+    return out;
+}
+
+QString restoreMathTokens(QString text, const QStringList& tokens)
+{
+    for (int i = 0; i < tokens.size(); ++i) {
+        text.replace(QStringLiteral("\uE000MATH%1\uE001").arg(i), tokens.at(i));
+    }
+    return text;
+}
 }
 
 QString MarkdownService::escapeHtml(const QString& text)
@@ -341,6 +612,9 @@ QString MarkdownService::escapeHtml(const QString& text)
 
 QString MarkdownService::inlineMarkup(QString text)
 {
+    QStringList mathTokens;
+    text = extractMathTokens(text, QRegularExpression(QStringLiteral("\\$\\$([\\s\\S]+?)\\$\\$")), mathTokens);
+    text = extractMathTokens(text, QRegularExpression(QStringLiteral("\\$([^$\\n]+?)\\$")), mathTokens);
     text = escapeHtml(text);
     text.replace(QRegularExpression(QStringLiteral("`([^`]+)`")), QStringLiteral("<code>\\1</code>"));
     text.replace(QRegularExpression(QStringLiteral("!\\[([^\\]]*)\\]\\(([^\\)]+)\\)")), QStringLiteral("<img alt=\"\\1\" src=\"\\2\">"));
@@ -348,9 +622,7 @@ QString MarkdownService::inlineMarkup(QString text)
     text.replace(QRegularExpression(QStringLiteral("\\*\\*([^*]+)\\*\\*")), QStringLiteral("<strong>\\1</strong>"));
     text.replace(QRegularExpression(QStringLiteral("~~([^~]+)~~")), QStringLiteral("<del>\\1</del>"));
     text.replace(QRegularExpression(QStringLiteral("(^|\\s)\\*([^*]+)\\*")), QStringLiteral("\\1<em>\\2</em>"));
-    text.replace(QRegularExpression(QStringLiteral("\\$\\$([^$]+)\\$\\$")), QStringLiteral("<div class=\"math math-block\">\\1</div>"));
-    text.replace(QRegularExpression(QStringLiteral("\\$([^$]+)\\$")), QStringLiteral("<span class=\"math math-inline\">\\1</span>"));
-    return text;
+    return restoreMathTokens(text, mathTokens);
 }
 
 QString MarkdownService::markdownToHtml(const QString& markdown)
@@ -360,10 +632,12 @@ QString MarkdownService::markdownToHtml(const QString& markdown)
     bool inCode = false;
     QString codeLanguage;
     QStringList codeLines;
+    QStringList mathLines;
     QStringList paragraph;
     bool inUl = false;
     bool inOl = false;
     bool inBlockquote = false;
+    bool inMathBlock = false;
 
     auto closeParagraph = [&]() {
         if (!paragraph.isEmpty()) {
@@ -389,6 +663,22 @@ QString MarkdownService::markdownToHtml(const QString& markdown)
     for (int i = 0; i < lines.size(); ++i) {
         const QString rawLine = lines.at(i);
         const QString line = rawLine.trimmed();
+
+        if (inMathBlock) {
+            if (line.endsWith(QStringLiteral("$$"))) {
+                const int closeIndex = rawLine.lastIndexOf(QStringLiteral("$$"));
+                const QString beforeClose = closeIndex < 0 ? QString() : rawLine.left(closeIndex);
+                if (!beforeClose.trimmed().isEmpty()) {
+                    mathLines << beforeClose;
+                }
+                html += renderMath(mathLines.join('\n'), true) + QStringLiteral("\n");
+                mathLines.clear();
+                inMathBlock = false;
+            } else {
+                mathLines << rawLine;
+            }
+            continue;
+        }
 
         if (line.startsWith(QStringLiteral("```"))) {
             closeParagraph();
@@ -424,6 +714,23 @@ QString MarkdownService::markdownToHtml(const QString& markdown)
 
         if (inCode) {
             codeLines << rawLine;
+            continue;
+        }
+
+        if (line.startsWith(QStringLiteral("$$"))) {
+            closeParagraph();
+            closeLists();
+
+            QString mathStart = line.mid(2).trimmed();
+            if (mathStart.endsWith(QStringLiteral("$$")) && mathStart.size() >= 2) {
+                mathStart.chop(2);
+                html += renderMath(mathStart, true) + QStringLiteral("\n");
+            } else {
+                if (!mathStart.isEmpty()) {
+                    mathLines << mathStart;
+                }
+                inMathBlock = true;
+            }
             continue;
         }
 
@@ -541,6 +848,9 @@ QString MarkdownService::markdownToHtml(const QString& markdown)
         }
         html += highlightCode(codeLines.join('\n'), codeLanguage);
         html += QStringLiteral("</code></pre></figure>\n");
+    }
+    if (inMathBlock) {
+        html += renderMath(mathLines.join('\n'), true) + QStringLiteral("\n");
     }
     return html;
 }
