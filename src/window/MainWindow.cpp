@@ -11,7 +11,6 @@
 #include "services/LoggingService.h"
 #include "services/MarkdownService.h"
 #include "services/RecoveryService.h"
-#include "theme/IconManager.h"
 #include "widgets/CommandPalette.h"
 #include "widgets/DocumentTabBar.h"
 #include "widgets/NavigationRail.h"
@@ -22,10 +21,10 @@
 
 #include <QApplication>
 #include <QCloseEvent>
-#include <QColor>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
@@ -61,7 +60,7 @@ MainWindow::MainWindow(QWidget* parent)
     , m_commands(new CommandRegistry(this))
 {
     setWindowTitle(QStringLiteral("SlateMark"));
-    setWindowIcon(IconManager::instance().icon(QStringLiteral("file"), QColor(QStringLiteral("#5aa7ff")), QSize(32, 32)));
+    setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.png")));
     resize(1500, 860);
     setMinimumSize(960, 620);
     buildUi();

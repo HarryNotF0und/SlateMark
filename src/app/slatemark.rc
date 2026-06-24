@@ -1,5 +1,7 @@
 #include <winver.h>
 
+SLATEMARK_ICON ICON "slatemark.ico"
+
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 0,1,0,0
  PRODUCTVERSION 0,1,0,0
@@ -31,4 +33,3 @@ BEGIN
         VALUE "Translation", 0x0409, 1200
     END
 END
-

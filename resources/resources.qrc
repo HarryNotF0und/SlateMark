@@ -6,6 +6,7 @@
     <file alias="preview/preview.js">preview/preview.js</file>
     <file alias="preview/index.html">preview/index.html</file>
     <file alias="icons/generic.svg">icons/generic.svg</file>
+    <file alias="icons/app-icon.png">icons/app-icon.png</file>
     <file alias="icons/file.svg">icons/file.svg</file>
     <file alias="icons/new-file.svg">icons/file.svg</file>
     <file alias="icons/open.svg">icons/folder.svg</file>
