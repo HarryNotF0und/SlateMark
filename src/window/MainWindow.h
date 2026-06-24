@@ -55,6 +55,7 @@ private:
     void loadDocumentToEditor(int index);
     void refreshTabTitle(int index);
     void refreshRecentFilesMenu();
+    void ensurePreviewReady();
     bool maybeSave(int index);
     bool saveDocument(int index, bool saveAs);
     QString documentDisplayName(const Document& document) const;
@@ -82,4 +83,5 @@ private:
     int m_loadedIndex = -1;
     bool m_loading = false;
     bool m_syncingScroll = false;
+    ViewMode m_currentViewMode = ViewMode::EditorOnly;
 };

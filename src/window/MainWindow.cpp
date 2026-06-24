@@ -160,12 +160,13 @@ void MainWindow::buildUi()
     connect(m_preview, &PreviewWidget::sourceLineClicked, m_editor, &MarkdownEditor::gotoLine);
     connect(m_settings, &SettingsService::changed, this, &MainWindow::applySettings);
     connect(m_editor->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
-        if (m_syncingScroll || !m_settings->scrollSync()) return;
+        if (m_syncingScroll || !m_settings->scrollSync() || m_currentViewMode != ViewMode::Split) return;
         const int max = m_editor->verticalScrollBar()->maximum();
         m_syncingScroll = true;
         m_preview->scrollToRatio(max <= 0 ? 0.0 : static_cast<double>(value) / max);
         m_syncingScroll = false;
     });
+    setViewMode(ViewMode::EditorOnly);
 }
 
 void MainWindow::buildMenus()
@@ -360,7 +361,10 @@ void MainWindow::updateCurrentDocumentText()
 void MainWindow::updatePreviewAndStats()
 {
     const QString text = m_editor->toPlainText();
-    m_preview->setMarkdown(text);
+    if (m_currentViewMode != ViewMode::EditorOnly) {
+        ensurePreviewReady();
+        m_preview->setMarkdown(text);
+    }
     const DocumentStatistics stats = MarkdownService::statistics(text);
     m_status->setStatistics(stats);
     m_toolPanel->setStatistics(stats);
@@ -395,9 +399,18 @@ void MainWindow::applySettings()
 
 void MainWindow::setViewMode(ViewMode mode)
 {
+    m_currentViewMode = mode;
     m_viewModes->setMode(mode);
     m_editor->setVisible(mode != ViewMode::PreviewOnly);
-    m_preview->setVisible(mode != ViewMode::EditorOnly);
+    if (mode == ViewMode::EditorOnly) {
+        m_preview->setVisible(false);
+        m_preview->releaseResources();
+        return;
+    }
+
+    ensurePreviewReady();
+    m_preview->setVisible(true);
+    updatePreviewAndStats();
 }
 
 void MainWindow::autoSaveRecovery()
@@ -438,6 +451,11 @@ void MainWindow::refreshRecentFilesMenu()
     if (m_recentMenu->actions().isEmpty()) {
         m_recentMenu->addAction(QStringLiteral("(Empty)"))->setEnabled(false);
     }
+}
+
+void MainWindow::ensurePreviewReady()
+{
+    m_preview->setDarkTheme(m_theme->isDark());
 }
 
 bool MainWindow::maybeSave(int index)

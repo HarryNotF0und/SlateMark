@@ -319,3 +319,104 @@ QMessageBox {
   background: #fbfcfe;
   color: #172033;
 }
+
+#settingsDialog {
+  background: #fbfcfe;
+}
+
+#settingsLabel {
+  color: #172033;
+  font-size: 14px;
+}
+
+#settingsCombo,
+#settingsSpin {
+  background: #ffffff;
+  color: #172033;
+  border: 1px solid #dfe6ef;
+  border-radius: 9px;
+  padding: 0 12px;
+  min-width: 180px;
+}
+
+#settingsCombo:hover,
+#settingsSpin:hover {
+  border-color: #bfd3ea;
+  background: #fafdff;
+}
+
+#settingsCombo:focus,
+#settingsSpin:focus {
+  border-color: #5aa7ff;
+}
+
+#settingsCombo::drop-down {
+  border: none;
+  width: 28px;
+}
+
+#settingsCombo::down-arrow {
+  image: none;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #526070;
+  margin-right: 10px;
+}
+
+#settingsToggle {
+  background: transparent;
+  min-width: 180px;
+  min-height: 38px;
+}
+
+#settingsToggle::indicator {
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  border: 1px solid #d7e0eb;
+  background: #eef2f7;
+}
+
+#settingsToggle::indicator:hover {
+  border-color: #bfd3ea;
+}
+
+#settingsToggle::indicator:checked {
+  background: #e8f3ff;
+  border-color: #2f8cff;
+}
+
+#settingsButtons QPushButton,
+#settingsPrimaryButton,
+#settingsSecondaryButton {
+  min-width: 88px;
+  min-height: 38px;
+  max-width: 88px;
+  max-height: 38px;
+  border-radius: 9px;
+  padding: 0;
+}
+
+#settingsPrimaryButton {
+  background: #2f8cff;
+  color: #ffffff;
+  border: 1px solid #2f8cff;
+}
+
+#settingsPrimaryButton:hover {
+  background: #197de8;
+  border-color: #197de8;
+}
+
+#settingsSecondaryButton {
+  background: #ffffff;
+  color: #172033;
+  border: 1px solid #dfe6ef;
+}
+
+#settingsSecondaryButton:hover {
+  background: #f4f9ff;
+  border-color: #c8d9ec;
+}

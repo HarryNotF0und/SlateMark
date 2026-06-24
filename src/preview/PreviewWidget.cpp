@@ -12,12 +12,13 @@
 #include <QWebChannel>
 #endif
 #if defined(SLATEMARK_HAS_WEBENGINE)
+#include <QWebEngineProfile>
 #include <QWebEngineSettings>
 #endif
 
 #if defined(SLATEMARK_HAS_WEBENGINE)
-SafePreviewPage::SafePreviewPage(QObject* parent)
-    : QWebEnginePage(parent)
+SafePreviewPage::SafePreviewPage(QWebEngineProfile* profile, QObject* parent)
+    : QWebEnginePage(profile, parent)
 {
 }
 
@@ -52,25 +53,63 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     : QWidget(parent)
 {
     setObjectName(QStringLiteral("previewWidget"));
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-#if defined(SLATEMARK_HAS_WEBENGINE)
-    m_view = new QWebEngineView(this);
-    m_view->setPage(new SafePreviewPage(m_view));
-    m_view->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
-    m_view->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, false);
-    m_view->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
-#if defined(SLATEMARK_HAS_WEBCHANNEL)
-    m_bridge = new PreviewBridge(this);
-    auto* channel = new QWebChannel(this);
-    channel->registerObject(QStringLiteral("bridge"), m_bridge);
-    m_view->page()->setWebChannel(channel);
-#endif
-    layout->addWidget(m_view);
+    m_layout = new QVBoxLayout(this);
+    m_layout->setContentsMargins(0, 0, 0, 0);
 
     m_debounce.setSingleShot(true);
     m_debounce.setInterval(180);
     connect(&m_debounce, &QTimer::timeout, this, &PreviewWidget::renderNow);
+}
+
+void PreviewWidget::ensureView()
+{
+    if (m_view) {
+        return;
+    }
+
+#if defined(SLATEMARK_HAS_WEBENGINE)
+    m_view = new QWebEngineView(this);
+    m_profile = new QWebEngineProfile(m_view);
+    m_profile->setHttpCacheType(QWebEngineProfile::NoCache);
+    m_profile->setHttpCacheMaximumSize(0);
+    m_profile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
+    m_profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::StoreInMemory);
+    m_profile->setSpellCheckEnabled(false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::AutoLoadIconsForPage, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::TouchIconsEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::PdfViewerEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::WebGLEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, false);
+    m_profile->settings()->setAttribute(QWebEngineSettings::BackForwardCacheEnabled, false);
+
+    m_view->setPage(new SafePreviewPage(m_profile, m_view));
+    QWebEngineSettings* settings = m_view->settings();
+    settings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
+    settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, false);
+    settings->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
+    settings->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
+    settings->setAttribute(QWebEngineSettings::JavascriptCanPaste, false);
+    settings->setAttribute(QWebEngineSettings::LocalStorageEnabled, false);
+    settings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
+    settings->setAttribute(QWebEngineSettings::PluginsEnabled, false);
+    settings->setAttribute(QWebEngineSettings::PdfViewerEnabled, false);
+    settings->setAttribute(QWebEngineSettings::WebGLEnabled, false);
+    settings->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, false);
+    settings->setAttribute(QWebEngineSettings::AutoLoadIconsForPage, false);
+    settings->setAttribute(QWebEngineSettings::TouchIconsEnabled, false);
+    settings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
+    settings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, false);
+    settings->setAttribute(QWebEngineSettings::BackForwardCacheEnabled, false);
+#if defined(SLATEMARK_HAS_WEBCHANNEL)
+    m_bridge = new PreviewBridge(m_view);
+    auto* channel = new QWebChannel(m_view);
+    channel->registerObject(QStringLiteral("bridge"), m_bridge);
+    m_view->page()->setWebChannel(channel);
+#endif
+    m_layout->addWidget(m_view);
 #if defined(SLATEMARK_HAS_WEBCHANNEL)
     connect(m_bridge, &PreviewBridge::sourceLineClicked, this, &PreviewWidget::sourceLineClicked);
     connect(m_bridge, &PreviewBridge::scrollRatioChanged, this, &PreviewWidget::scrollRatioChanged);
@@ -79,8 +118,7 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     m_view = new QTextBrowser(this);
     m_view->setOpenExternalLinks(false);
     m_view->setOpenLinks(false);
-    layout->addWidget(m_view);
-    connect(&m_debounce, &QTimer::timeout, this, &PreviewWidget::renderNow);
+    m_layout->addWidget(m_view);
     connect(m_view, &QTextBrowser::anchorClicked, this, [](const QUrl& url) {
         if (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https") || url.scheme() == QStringLiteral("mailto")) {
             QDesktopServices::openUrl(url);
@@ -91,6 +129,7 @@ PreviewWidget::PreviewWidget(QWidget* parent)
         emit scrollRatioChanged(max <= 0 ? 0.0 : static_cast<double>(value) / max);
     });
 #endif
+    m_view->show();
 }
 
 void PreviewWidget::setMarkdown(const QString& markdown)
@@ -102,11 +141,16 @@ void PreviewWidget::setMarkdown(const QString& markdown)
 void PreviewWidget::setDarkTheme(bool dark)
 {
     m_dark = dark;
-    renderNow();
+    if (m_view) {
+        renderNow();
+    }
 }
 
 void PreviewWidget::scrollToRatio(double ratio)
 {
+    if (!m_view) {
+        return;
+    }
     const double clamped = qBound(0.0, ratio, 1.0);
 #if defined(SLATEMARK_HAS_WEBENGINE)
     m_view->page()->runJavaScript(QStringLiteral("window.__slateMarkScrollToRatio(%1);").arg(clamped, 0, 'f', 4));
@@ -116,8 +160,32 @@ void PreviewWidget::scrollToRatio(double ratio)
 #endif
 }
 
+void PreviewWidget::releaseResources()
+{
+    m_debounce.stop();
+    if (!m_view) {
+        return;
+    }
+#if defined(SLATEMARK_HAS_WEBCHANNEL)
+    m_bridge = nullptr;
+#endif
+#if defined(SLATEMARK_HAS_WEBENGINE)
+    m_view->setHtml(QString());
+    if (m_profile) {
+        m_profile->clearHttpCache();
+    }
+#endif
+    m_layout->removeWidget(m_view);
+    m_view->deleteLater();
+    m_view = nullptr;
+#if defined(SLATEMARK_HAS_WEBENGINE)
+    m_profile = nullptr;
+#endif
+}
+
 void PreviewWidget::renderNow()
 {
+    ensureView();
 #if defined(SLATEMARK_HAS_WEBENGINE)
     m_view->setHtml(wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown)), QUrl(QStringLiteral("qrc:/preview/")));
 #else

@@ -6,16 +6,20 @@
 #include <QUrl>
 #include <QWidget>
 
+class QVBoxLayout;
+
 #if defined(SLATEMARK_HAS_WEBENGINE)
 #include <QWebEnginePage>
 #include <QWebEngineView>
+
+class QWebEngineProfile;
 
 class SafePreviewPage : public QWebEnginePage
 {
     Q_OBJECT
 
 public:
-    explicit SafePreviewPage(QObject* parent = nullptr);
+    explicit SafePreviewPage(QWebEngineProfile* profile, QObject* parent = nullptr);
 
 protected:
     bool acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame) override;
@@ -33,6 +37,7 @@ public:
     void setMarkdown(const QString& markdown);
     void setDarkTheme(bool dark);
     void scrollToRatio(double ratio);
+    void releaseResources();
 
 signals:
     void sourceLineClicked(int line);
@@ -42,10 +47,13 @@ private slots:
     void renderNow();
 
 private:
+    void ensureView();
     QString wrapHtml(const QString& body) const;
 
+    QVBoxLayout* m_layout = nullptr;
 #if defined(SLATEMARK_HAS_WEBENGINE)
     QWebEngineView* m_view = nullptr;
+    QWebEngineProfile* m_profile = nullptr;
 #if defined(SLATEMARK_HAS_WEBCHANNEL)
     PreviewBridge* m_bridge = nullptr;
 #endif
