@@ -47,6 +47,13 @@ SettingsDialog::SettingsDialog(SettingsService* settings, QWidget* parent)
     m_theme->addItems({QStringLiteral("dark"), QStringLiteral("light"), QStringLiteral("system")});
     m_theme->setCurrentText(settings->theme());
 
+    m_previewEngine = new QComboBox(this);
+    m_previewEngine->setObjectName(QStringLiteral("settingsCombo"));
+    m_previewEngine->addItem(QStringLiteral("Lightweight"), QStringLiteral("lightweight"));
+    m_previewEngine->addItem(QStringLiteral("WebEngine"), QStringLiteral("webengine"));
+    const int previewIndex = m_previewEngine->findData(settings->previewEngine());
+    m_previewEngine->setCurrentIndex(previewIndex < 0 ? 0 : previewIndex);
+
     m_fontSize = new QSpinBox(this);
     m_fontSize->setObjectName(QStringLiteral("settingsSpin"));
     m_fontSize->setButtonSymbols(QAbstractSpinBox::NoButtons);
@@ -78,12 +85,13 @@ SettingsDialog::SettingsDialog(SettingsService* settings, QWidget* parent)
     m_autoSaveInterval->setValue(settings->autoSaveIntervalSeconds());
 
     addRow(0, QStringLiteral("Theme"), m_theme);
-    addRow(1, QStringLiteral("Editor size"), m_fontSize);
-    addRow(2, QStringLiteral("Tab width"), m_tabWidth);
-    addRow(3, QStringLiteral("Word wrap"), m_wrap);
-    addRow(4, QStringLiteral("Scroll sync"), m_scrollSync);
-    addRow(5, QStringLiteral("Auto save"), m_autoSave);
-    addRow(6, QStringLiteral("Auto save seconds"), m_autoSaveInterval);
+    addRow(1, QStringLiteral("Preview engine"), m_previewEngine);
+    addRow(2, QStringLiteral("Editor size"), m_fontSize);
+    addRow(3, QStringLiteral("Tab width"), m_tabWidth);
+    addRow(4, QStringLiteral("Word wrap"), m_wrap);
+    addRow(5, QStringLiteral("Scroll sync"), m_scrollSync);
+    addRow(6, QStringLiteral("Auto save"), m_autoSave);
+    addRow(7, QStringLiteral("Auto save seconds"), m_autoSaveInterval);
 
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     buttons->setObjectName(QStringLiteral("settingsButtons"));
@@ -95,6 +103,7 @@ SettingsDialog::SettingsDialog(SettingsService* settings, QWidget* parent)
         QFont font = m_settings->editorFont();
         font.setPointSize(m_fontSize->value());
         m_settings->setTheme(m_theme->currentText());
+        m_settings->setPreviewEngine(m_previewEngine->currentData().toString());
         m_settings->setEditorFont(font);
         m_settings->setTabWidth(m_tabWidth->value());
         m_settings->setWordWrap(m_wrap->isChecked());

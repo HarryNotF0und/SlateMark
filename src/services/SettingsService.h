@@ -13,6 +13,8 @@ public:
 
     QString theme() const;
     void setTheme(const QString& theme);
+    QString previewEngine() const;
+    void setPreviewEngine(const QString& engine);
     QFont editorFont() const;
     void setEditorFont(const QFont& font);
     int tabWidth() const;
@@ -36,4 +38,3 @@ signals:
 private:
     QSettings m_settings;
 };
-

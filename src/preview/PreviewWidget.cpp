@@ -61,15 +61,57 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     connect(&m_debounce, &QTimer::timeout, this, &PreviewWidget::renderNow);
 }
 
+void PreviewWidget::setEngine(PreviewEngine engine)
+{
+#if !defined(SLATEMARK_HAS_WEBENGINE)
+    engine = PreviewEngine::Lightweight;
+#endif
+    if (m_engine == engine) {
+        return;
+    }
+    m_engine = engine;
+    releaseResources();
+    if (isVisible() && !m_pendingMarkdown.isEmpty()) {
+        renderNow();
+    }
+}
+
+void PreviewWidget::ensureLightweightView()
+{
+    if (m_textView) {
+        return;
+    }
+    m_textView = new QTextBrowser(this);
+    m_textView->setOpenExternalLinks(false);
+    m_textView->setOpenLinks(false);
+    m_textView->document()->setDocumentMargin(0);
+    m_layout->addWidget(m_textView);
+    connect(m_textView, &QTextBrowser::anchorClicked, this, [](const QUrl& url) {
+        if (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https") || url.scheme() == QStringLiteral("mailto")) {
+            QDesktopServices::openUrl(url);
+        }
+    });
+    connect(m_textView->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
+        const int max = m_textView->verticalScrollBar()->maximum();
+        emit scrollRatioChanged(max <= 0 ? 0.0 : static_cast<double>(value) / max);
+    });
+    m_textView->show();
+}
+
 void PreviewWidget::ensureView()
 {
-    if (m_view) {
+    if (m_engine == PreviewEngine::Lightweight) {
+        ensureLightweightView();
         return;
     }
 
 #if defined(SLATEMARK_HAS_WEBENGINE)
-    m_view = new QWebEngineView(this);
-    m_profile = new QWebEngineProfile(m_view);
+    if (m_webView) {
+        return;
+    }
+
+    m_webView = new QWebEngineView(this);
+    m_profile = new QWebEngineProfile(m_webView);
     m_profile->setHttpCacheType(QWebEngineProfile::NoCache);
     m_profile->setHttpCacheMaximumSize(0);
     m_profile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
@@ -85,8 +127,8 @@ void PreviewWidget::ensureView()
     m_profile->settings()->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, false);
     m_profile->settings()->setAttribute(QWebEngineSettings::BackForwardCacheEnabled, false);
 
-    m_view->setPage(new SafePreviewPage(m_profile, m_view));
-    QWebEngineSettings* settings = m_view->settings();
+    m_webView->setPage(new SafePreviewPage(m_profile, m_webView));
+    QWebEngineSettings* settings = m_webView->settings();
     settings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
     settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, false);
     settings->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
@@ -104,32 +146,20 @@ void PreviewWidget::ensureView()
     settings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, false);
     settings->setAttribute(QWebEngineSettings::BackForwardCacheEnabled, false);
 #if defined(SLATEMARK_HAS_WEBCHANNEL)
-    m_bridge = new PreviewBridge(m_view);
-    auto* channel = new QWebChannel(m_view);
+    m_bridge = new PreviewBridge(m_webView);
+    auto* channel = new QWebChannel(m_webView);
     channel->registerObject(QStringLiteral("bridge"), m_bridge);
-    m_view->page()->setWebChannel(channel);
+    m_webView->page()->setWebChannel(channel);
 #endif
-    m_layout->addWidget(m_view);
+    m_layout->addWidget(m_webView);
 #if defined(SLATEMARK_HAS_WEBCHANNEL)
     connect(m_bridge, &PreviewBridge::sourceLineClicked, this, &PreviewWidget::sourceLineClicked);
     connect(m_bridge, &PreviewBridge::scrollRatioChanged, this, &PreviewWidget::scrollRatioChanged);
 #endif
+    m_webView->show();
 #else
-    m_view = new QTextBrowser(this);
-    m_view->setOpenExternalLinks(false);
-    m_view->setOpenLinks(false);
-    m_layout->addWidget(m_view);
-    connect(m_view, &QTextBrowser::anchorClicked, this, [](const QUrl& url) {
-        if (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https") || url.scheme() == QStringLiteral("mailto")) {
-            QDesktopServices::openUrl(url);
-        }
-    });
-    connect(m_view->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
-        const int max = m_view->verticalScrollBar()->maximum();
-        emit scrollRatioChanged(max <= 0 ? 0.0 : static_cast<double>(value) / max);
-    });
+    ensureLightweightView();
 #endif
-    m_view->show();
 }
 
 void PreviewWidget::setMarkdown(const QString& markdown)
@@ -141,77 +171,96 @@ void PreviewWidget::setMarkdown(const QString& markdown)
 void PreviewWidget::setDarkTheme(bool dark)
 {
     m_dark = dark;
-    if (m_view) {
+    if (m_textView
+#if defined(SLATEMARK_HAS_WEBENGINE)
+        || m_webView
+#endif
+    ) {
         renderNow();
     }
 }
 
 void PreviewWidget::scrollToRatio(double ratio)
 {
-    if (!m_view) {
+    const double clamped = qBound(0.0, ratio, 1.0);
+    if (m_engine == PreviewEngine::Lightweight) {
+        if (!m_textView) {
+            return;
+        }
+        QScrollBar* bar = m_textView->verticalScrollBar();
+        bar->setValue(qRound(clamped * bar->maximum()));
         return;
     }
-    const double clamped = qBound(0.0, ratio, 1.0);
+
 #if defined(SLATEMARK_HAS_WEBENGINE)
-    m_view->page()->runJavaScript(QStringLiteral("window.__slateMarkScrollToRatio(%1);").arg(clamped, 0, 'f', 4));
-#else
-    QScrollBar* bar = m_view->verticalScrollBar();
-    bar->setValue(qRound(clamped * bar->maximum()));
+    if (!m_webView) {
+        return;
+    }
+    m_webView->page()->runJavaScript(QStringLiteral("window.__slateMarkScrollToRatio(%1);").arg(clamped, 0, 'f', 4));
+#endif
+}
+
+void PreviewWidget::releaseLightweightView()
+{
+    if (!m_textView) {
+        return;
+    }
+    m_layout->removeWidget(m_textView);
+    m_textView->deleteLater();
+    m_textView = nullptr;
+}
+
+void PreviewWidget::releaseWebEngineView()
+{
+#if defined(SLATEMARK_HAS_WEBENGINE)
+    if (!m_webView) {
+        return;
+    }
+#if defined(SLATEMARK_HAS_WEBCHANNEL)
+    m_bridge = nullptr;
+#endif
+    m_webView->setHtml(QString());
+    if (m_profile) {
+        m_profile->clearHttpCache();
+    }
+    m_layout->removeWidget(m_webView);
+    m_webView->deleteLater();
+    m_webView = nullptr;
+    m_profile = nullptr;
 #endif
 }
 
 void PreviewWidget::releaseResources()
 {
     m_debounce.stop();
-    if (!m_view) {
-        return;
-    }
-#if defined(SLATEMARK_HAS_WEBCHANNEL)
-    m_bridge = nullptr;
-#endif
-#if defined(SLATEMARK_HAS_WEBENGINE)
-    m_view->setHtml(QString());
-    if (m_profile) {
-        m_profile->clearHttpCache();
-    }
-#endif
-    m_layout->removeWidget(m_view);
-    m_view->deleteLater();
-    m_view = nullptr;
-#if defined(SLATEMARK_HAS_WEBENGINE)
-    m_profile = nullptr;
-#endif
+    releaseLightweightView();
+    releaseWebEngineView();
 }
 
 void PreviewWidget::renderNow()
 {
     ensureView();
+    const QString html = wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown), m_engine == PreviewEngine::WebEngine);
+    if (m_engine == PreviewEngine::Lightweight) {
+        m_textView->setHtml(html);
+        return;
+    }
+
 #if defined(SLATEMARK_HAS_WEBENGINE)
-    m_view->setHtml(wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown)), QUrl(QStringLiteral("qrc:/preview/")));
+    m_webView->setHtml(html, QUrl(QStringLiteral("qrc:/preview/")));
 #else
-    m_view->setHtml(wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown)));
+    m_textView->setHtml(html);
 #endif
 }
 
-QString PreviewWidget::wrapHtml(const QString& body) const
+QString PreviewWidget::wrapHtml(const QString& body, bool includeScript) const
 {
     const QString css = readResource(QStringLiteral(":/preview/preview.css"));
-    const QString js = readResource(QStringLiteral(":/preview/preview.js"));
-#if defined(SLATEMARK_HAS_WEBENGINE)
-#if defined(SLATEMARK_HAS_WEBCHANNEL)
+    const QString js = includeScript ? readResource(QStringLiteral(":/preview/preview.js")) : QString();
+    const QString script = includeScript
+        ? QStringLiteral("<script src=\"qrc:///qtwebchannel/qwebchannel.js\"></script><script>%1</script>").arg(js)
+        : QString();
     return QStringLiteral("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-                          "<style>%1</style></head><body class=\"%2\"><main class=\"markdown-body\">%3</main>"
-                          "<script src=\"qrc:///qtwebchannel/qwebchannel.js\"></script><script>%4</script></body></html>")
-        .arg(css, m_dark ? QStringLiteral("dark") : QStringLiteral("light"), body, js);
-#else
-    Q_UNUSED(js)
-    return QStringLiteral("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-                          "<style>%1</style></head><body class=\"%2\"><main class=\"markdown-body\">%3</main><script>%4</script></body></html>")
-        .arg(css, m_dark ? QStringLiteral("dark") : QStringLiteral("light"), body, QStringLiteral("window.__slateMarkScrollToRatio=function(r){var m=document.documentElement.scrollHeight-window.innerHeight;window.scrollTo(0,m*r);};"));
-#endif
-#else
-    Q_UNUSED(js)
-    return QStringLiteral("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>%1</style></head><body class=\"%2\"><main class=\"markdown-body\">%3</main></body></html>")
-        .arg(css, m_dark ? QStringLiteral("dark") : QStringLiteral("light"), body);
-#endif
+                          "<style>%1</style></head><body class=\"%2\"><main class=\"markdown-body\">%3</main>%4</body></html>")
+        .arg(css, m_dark ? QStringLiteral("dark") : QStringLiteral("light"), body, script);
 }

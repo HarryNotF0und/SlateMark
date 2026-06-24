@@ -18,6 +18,7 @@ public:
 private:
     SettingsService* m_settings = nullptr;
     QComboBox* m_theme = nullptr;
+    QComboBox* m_previewEngine = nullptr;
     QSpinBox* m_fontSize = nullptr;
     QSpinBox* m_tabWidth = nullptr;
     QCheckBox* m_wrap = nullptr;
@@ -25,4 +26,3 @@ private:
     QCheckBox* m_autoSave = nullptr;
     QSpinBox* m_autoSaveInterval = nullptr;
 };
-

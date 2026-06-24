@@ -393,8 +393,12 @@ void MainWindow::applySettings()
     m_editor->setDarkTheme(m_theme->isDark());
     m_editor->setTabWidthSpaces(m_settings->tabWidth());
     m_editor->setLineWrapMode(m_settings->wordWrap() ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+    m_preview->setEngine(m_settings->previewEngine() == QStringLiteral("webengine") ? PreviewEngine::WebEngine : PreviewEngine::Lightweight);
     m_preview->setDarkTheme(m_theme->isDark());
     m_recoveryTimer.setInterval(qMax(5, m_settings->autoSaveIntervalSeconds()) * 1000);
+    if (m_currentViewMode != ViewMode::EditorOnly) {
+        updatePreviewAndStats();
+    }
 }
 
 void MainWindow::setViewMode(ViewMode mode)
@@ -455,6 +459,7 @@ void MainWindow::refreshRecentFilesMenu()
 
 void MainWindow::ensurePreviewReady()
 {
+    m_preview->setEngine(m_settings->previewEngine() == QStringLiteral("webengine") ? PreviewEngine::WebEngine : PreviewEngine::Lightweight);
     m_preview->setDarkTheme(m_theme->isDark());
 }
 

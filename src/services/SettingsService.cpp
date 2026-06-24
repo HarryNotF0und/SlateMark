@@ -10,6 +10,12 @@ SettingsService::SettingsService(QObject* parent)
 
 QString SettingsService::theme() const { return m_settings.value(QStringLiteral("theme"), QStringLiteral("dark")).toString(); }
 void SettingsService::setTheme(const QString& theme) { m_settings.setValue(QStringLiteral("theme"), theme); emit changed(); }
+QString SettingsService::previewEngine() const { return m_settings.value(QStringLiteral("previewEngine"), QStringLiteral("lightweight")).toString(); }
+void SettingsService::setPreviewEngine(const QString& engine)
+{
+    m_settings.setValue(QStringLiteral("previewEngine"), engine == QStringLiteral("webengine") ? QStringLiteral("webengine") : QStringLiteral("lightweight"));
+    emit changed();
+}
 QFont SettingsService::editorFont() const { return qvariant_cast<QFont>(m_settings.value(QStringLiteral("editorFont"), QFont(QStringLiteral("Consolas"), 12))); }
 void SettingsService::setEditorFont(const QFont& font) { m_settings.setValue(QStringLiteral("editorFont"), font); emit changed(); }
 int SettingsService::tabWidth() const { return m_settings.value(QStringLiteral("tabWidth"), 4).toInt(); }
@@ -26,4 +32,3 @@ QString SettingsService::defaultSaveDir() const { return m_settings.value(QStrin
 void SettingsService::setDefaultSaveDir(const QString& path) { m_settings.setValue(QStringLiteral("defaultSaveDir"), path); emit changed(); }
 bool SettingsService::restoreSession() const { return m_settings.value(QStringLiteral("restoreSession"), true).toBool(); }
 void SettingsService::setRestoreSession(bool enabled) { m_settings.setValue(QStringLiteral("restoreSession"), enabled); emit changed(); }
-
