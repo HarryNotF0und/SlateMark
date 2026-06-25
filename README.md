@@ -1,6 +1,6 @@
 # SlateMark
 
-SlateMark is a Qt 6 / C++20 Windows Markdown editor built with native Qt Widgets, a `QPlainTextEdit` editor, and `QWebEngineView` only for live preview.
+SlateMark is a Qt 6 / C++20 Markdown editor built with native Qt Widgets, a `QPlainTextEdit` editor, and `QWebEngineView` only for live preview.
 
 ## Implemented
 
@@ -19,7 +19,7 @@ SlateMark is a Qt 6 / C++20 Windows Markdown editor built with native Qt Widgets
 
 - The Markdown converter is an internal safe subset implementation. The architecture keeps it isolated in `MarkdownService`; replace it with md4c or cmark-gfm for full GitHub Flavored Markdown parity.
 - KaTeX, Mermaid, and syntax highlighter JavaScript libraries are not bundled in this scaffold, so math and Mermaid are presented safely/styled but not fully rendered.
-- The app uses the native Windows title bar to keep Snap Layout, resize behavior, shadows, and system controls reliable.
+- The app uses native platform window decorations so resize behavior, shadows, and system controls remain reliable.
 - Session restore is represented in settings and recovery storage, but automatic reopening of all prior tabs is not yet implemented.
 
 ## Dependencies
@@ -29,10 +29,43 @@ SlateMark is a Qt 6 / C++20 Windows Markdown editor built with native Qt Widgets
 - CMake 3.24 or newer
 - Ninja
 - MSVC 2022 recommended on Windows 10/11; MinGW Qt builds should also work if Qt WebEngine is available
+- GCC or Clang on Linux with the Qt 6 development packages installed
 
 No Electron or web-app shell is used. The preview is the only WebEngine surface.
 
 ## Configure and Build
+
+### Linux
+
+Install Qt 6 development packages, including Qt WebEngine and WebChannel when available. On Fedora, the package names are typically:
+
+```bash
+sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qtsvg-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel
+```
+
+Then configure, build, and test:
+
+```bash
+cmake --preset linux-release
+cmake --build --preset linux-release
+ctest --preset linux-release
+```
+
+Run the application:
+
+```bash
+./build/linux-release/SlateMark
+```
+
+Install into a staging or system prefix:
+
+```bash
+cmake --install build/linux-release --prefix "$PWD/dist/linux"
+```
+
+The Linux install target includes the executable, a freedesktop `.desktop` file, AppStream metainfo, and a hicolor app icon.
+
+### Windows
 
 Open a Qt-enabled Developer PowerShell where `cmake`, `ninja`, and the Qt 6 CMake package are on `PATH`.
 

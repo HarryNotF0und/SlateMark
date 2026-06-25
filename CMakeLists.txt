@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.24)
 
 project(SlateMark VERSION 0.1.0 LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -134,6 +136,22 @@ if(SLATEMARK_HAS_WEBCHANNEL)
     target_link_libraries(SlateMark PRIVATE Qt6::WebChannel)
 endif()
 
+if(UNIX AND NOT APPLE)
+    set(SLATEMARK_DESKTOP_ID io.github.HarryNotF0und.SlateMark)
+    target_compile_definitions(SlateMark PRIVATE SLATEMARK_DESKTOP_FILE_NAME="${SLATEMARK_DESKTOP_ID}")
+
+    configure_file(
+        packaging/linux/io.github.HarryNotF0und.SlateMark.desktop.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${SLATEMARK_DESKTOP_ID}.desktop
+        @ONLY
+    )
+    configure_file(
+        packaging/linux/io.github.HarryNotF0und.SlateMark.metainfo.xml.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${SLATEMARK_DESKTOP_ID}.metainfo.xml
+        @ONLY
+    )
+endif()
+
 enable_testing()
 
 qt_add_executable(SlateMarkTests
@@ -144,3 +162,32 @@ qt_add_executable(SlateMarkTests
 target_include_directories(SlateMarkTests PRIVATE src)
 target_link_libraries(SlateMarkTests PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Test)
 add_test(NAME SlateMarkTests COMMAND SlateMarkTests)
+if(UNIX AND NOT APPLE)
+    set(SLATEMARK_TEST_STATE_DIR ${CMAKE_CURRENT_BINARY_DIR}/test-state)
+    file(MAKE_DIRECTORY
+        ${SLATEMARK_TEST_STATE_DIR}/config
+        ${SLATEMARK_TEST_STATE_DIR}/data
+        ${SLATEMARK_TEST_STATE_DIR}/cache
+    )
+    set_tests_properties(SlateMarkTests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CONFIG_HOME=${SLATEMARK_TEST_STATE_DIR}/config;XDG_DATA_HOME=${SLATEMARK_TEST_STATE_DIR}/data;XDG_CACHE_HOME=${SLATEMARK_TEST_STATE_DIR}/cache"
+    )
+endif()
+
+install(TARGETS SlateMark
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .
+)
+
+if(UNIX AND NOT APPLE)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${SLATEMARK_DESKTOP_ID}.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${SLATEMARK_DESKTOP_ID}.metainfo.xml
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
+    )
+    install(FILES resources/icons/app-icon.png
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps
+        RENAME ${SLATEMARK_DESKTOP_ID}.png
+    )
+endif()

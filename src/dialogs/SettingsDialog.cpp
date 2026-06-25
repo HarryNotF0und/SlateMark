@@ -18,7 +18,9 @@ SettingsDialog::SettingsDialog(SettingsService* settings, QWidget* parent)
     setWindowTitle(QStringLiteral("Settings"));
     setObjectName(QStringLiteral("settingsDialog"));
     setMinimumWidth(400);
+#ifdef Q_OS_WIN
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint, true);
+#endif
 
     auto* root = new QVBoxLayout(this);
     root->setContentsMargins(18, 18, 18, 18);

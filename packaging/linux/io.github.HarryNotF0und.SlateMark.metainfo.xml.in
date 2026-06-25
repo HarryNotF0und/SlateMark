@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>@SLATEMARK_DESKTOP_ID@</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>SlateMark</name>
+  <summary>Native Qt Markdown editor with live preview</summary>
+  <developer id="io.github.harrynotf0und">
+    <name>HarryNotF0und</name>
+  </developer>
+  <description>
+    <p>
+      SlateMark is a Qt Widgets Markdown editor with tabs, syntax highlighting,
+      live preview, HTML export, recovery, recent files, and configurable editor
+      settings.
+    </p>
+  </description>
+  <launchable type="desktop-id">@SLATEMARK_DESKTOP_ID@.desktop</launchable>
+  <url type="homepage">https://github.com/HarryNotF0und/SlateMark</url>
+  <provides>
+    <binary>SlateMark</binary>
+  </provides>
+  <releases>
+    <release version="@PROJECT_VERSION@" date="2026-06-25" />
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>

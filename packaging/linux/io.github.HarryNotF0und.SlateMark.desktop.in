@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=SlateMark
+GenericName=Markdown Editor
+Comment=Native Qt Markdown editor with live preview
+Exec=SlateMark %F
+Icon=@SLATEMARK_DESKTOP_ID@
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/markdown;text/x-markdown;text/plain;
+StartupNotify=true
+StartupWMClass=SlateMark

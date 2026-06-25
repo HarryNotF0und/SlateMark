@@ -36,6 +36,9 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SlateMark"));
     app.setOrganizationName(QStringLiteral("SlateMark"));
+#if defined(SLATEMARK_DESKTOP_FILE_NAME)
+    app.setDesktopFileName(QStringLiteral(SLATEMARK_DESKTOP_FILE_NAME));
+#endif
     app.setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.png")));
     LoggingService::install();
 
