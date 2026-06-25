@@ -193,7 +193,6 @@ img {
 .math {
   font-family: Cambria Math, serif;
   color: #b8d9ff;
-  font-size: 1.08em;
 }
 .math-inline {
   white-space: nowrap;
@@ -209,81 +208,21 @@ img {
   border: 1px solid rgba(90, 167, 255, .18);
   border-radius: 9px;
 }
-.math-ident {
-  font-style: italic;
+.math mjx-container {
+  color: inherit;
+  outline: none;
 }
-.math-number {
-  font-variant-numeric: lining-nums;
-}
-.math-scripted {
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-}
-.math-base {
-  display: inline-block;
-}
-.math-scripts {
-  display: inline-flex;
-  flex-direction: column;
-  line-height: .9;
-  margin-left: 1px;
-}
-.math-scripts sup,
-.math-scripts sub {
-  display: block;
-  font-size: .66em;
-  line-height: .9;
-  position: static;
-}
-.math-frac {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  line-height: 1.12;
-  margin: 0 .12em;
-}
-.math-num {
-  display: block;
-  padding: 0 .28em .12em;
-  border-bottom: 1px solid currentColor;
-}
-.math-den {
-  display: block;
-  padding: .12em .28em 0;
-}
-.math-root {
-  display: inline-flex;
-  align-items: flex-start;
-  vertical-align: middle;
-}
-.math-radical {
-  font-size: 1.24em;
-  line-height: .95;
-}
-.math-radicand {
-  display: inline-block;
-  padding: .03em .16em 0 .12em;
-  border-top: 1px solid currentColor;
-}
-.math-root-degree {
-  font-size: .58em;
-  line-height: 1;
-  margin-right: -.12em;
-  margin-top: -.28em;
-}
-.math-op {
-  display: inline-block;
-  font-size: 1.45em;
-  line-height: .85;
-  vertical-align: middle;
-  margin: 0 .08em;
-}
-.math-fn {
-  font-style: normal;
-  margin-right: .08em;
+.math-raw {
+  margin: 1em 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+  font-size: .94em;
+  color: #aab3c2;
+  background: rgba(150, 160, 173, .08);
+  border: 1px solid rgba(150, 160, 173, .18);
+  border-radius: 8px;
 }
 .mermaid {
   white-space: pre;
@@ -354,6 +293,12 @@ body.light .math {
 body.light .math-block {
   background: #f6faff;
   border-color: #d7e8fb;
+}
+
+body.light .math-raw {
+  color: #43546a;
+  background: #f6f9fd;
+  border-color: #dfe6ef;
 }
 
 body.light .mermaid {

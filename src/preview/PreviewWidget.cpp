@@ -240,7 +240,8 @@ void PreviewWidget::releaseResources()
 void PreviewWidget::renderNow()
 {
     ensureView();
-    const QString html = wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown), m_engine == PreviewEngine::WebEngine);
+    const bool useWebEngine = m_engine == PreviewEngine::WebEngine;
+    const QString html = wrapHtml(MarkdownService::markdownToHtml(m_pendingMarkdown, useWebEngine ? MathRenderMode::MathJax : MathRenderMode::PlainText), useWebEngine);
     if (m_engine == PreviewEngine::Lightweight) {
         m_textView->setHtml(html);
         return;
@@ -258,7 +259,10 @@ QString PreviewWidget::wrapHtml(const QString& body, bool includeScript) const
     const QString css = readResource(QStringLiteral(":/preview/preview.css"));
     const QString js = includeScript ? readResource(QStringLiteral(":/preview/preview.js")) : QString();
     const QString script = includeScript
-        ? QStringLiteral("<script src=\"qrc:///qtwebchannel/qwebchannel.js\"></script><script>%1</script>").arg(js)
+        ? QStringLiteral("<script src=\"qrc:///qtwebchannel/qwebchannel.js\"></script>"
+                         "<script>window.MathJax={tex:{packages:{\"[+]\":['ams','newcommand','configmacros','mathtools','noerrors','noundefined','html','color','bbox','cancel','enclose','extpfeil','unicode','verb']},inlineMath:[[\"\\\\(\",\"\\\\)\"],[\"$\",\"$\"]],displayMath:[[\"\\\\[\",\"\\\\]\"],[\"$$\",\"$$\"]],processEscapes:true,processEnvironments:true,processRefs:true},svg:{fontCache:'local',mtextInheritFont:true},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']},startup:{typeset:true}};</script>"
+                         "<script src=\"qrc:///vendor/mathjax/tex-svg-full.js\"></script><script>%1</script>")
+              .arg(js)
         : QString();
     return QStringLiteral("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
                           "<style>%1</style></head><body class=\"%2\"><main class=\"markdown-body\">%3</main>%4</body></html>")

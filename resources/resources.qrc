@@ -5,6 +5,8 @@
     <file alias="preview/preview.css">preview/preview.css</file>
     <file alias="preview/preview.js">preview/preview.js</file>
     <file alias="preview/index.html">preview/index.html</file>
+    <file alias="vendor/mathjax/tex-svg-full.js">vendor/mathjax/tex-svg-full.js</file>
+    <file alias="vendor/mathjax/LICENSE">vendor/mathjax/LICENSE</file>
     <file alias="icons/generic.svg">icons/generic.svg</file>
     <file alias="icons/app-icon.png">icons/app-icon.png</file>
     <file alias="icons/file.svg">icons/file.svg</file>

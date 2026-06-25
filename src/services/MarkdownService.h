@@ -35,10 +35,16 @@ struct HtmlExportOptions
     QString customCss;
 };
 
+enum class MathRenderMode
+{
+    PlainText,
+    MathJax
+};
+
 class MarkdownService
 {
 public:
-    static QString markdownToHtml(const QString& markdown);
+    static QString markdownToHtml(const QString& markdown, MathRenderMode mathMode = MathRenderMode::PlainText);
     static QString completeHtmlDocument(const QString& markdown, const HtmlExportOptions& options);
     static QVector<MarkdownHeading> outline(const QString& markdown);
     static DocumentStatistics statistics(const QString& markdown);
@@ -48,7 +54,6 @@ public:
     static QString tableTemplate(int rows, int columns);
 
 private:
-    static QString inlineMarkup(QString text);
+    static QString inlineMarkup(QString text, MathRenderMode mathMode);
     static QString escapeHtml(const QString& text);
 };
-
