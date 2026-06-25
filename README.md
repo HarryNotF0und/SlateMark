@@ -37,7 +37,6 @@ No Electron or web-app shell is used. The preview is the only WebEngine surface.
 Open a Qt-enabled Developer PowerShell where `cmake`, `ninja`, and the Qt 6 CMake package are on `PATH`.
 
 ```powershell
-cd C:\Users\SiO2-\Documents\Markdown\SlateMark
 cmake --preset windows-msvc
 cmake --build --preset windows-msvc-release
 ctest --preset windows-msvc-release
